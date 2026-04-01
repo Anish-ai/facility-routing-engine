@@ -1,4 +1,5 @@
 export type NodeType = 'room' | 'corridor' | 'stair' | 'elevator' | 'entry' | 'exit' | 'door'
+export type EmergencyType = 'fire' | 'medical' | 'security' | 'smoke' | 'hazmat'
 
 export type Tool =
   | 'select'

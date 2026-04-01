@@ -42,7 +42,7 @@ function createFloor(floorId: number): Floor {
     { key: 's', label: 'South Corridor', x: 520, y: 470 },
     { key: 'se', label: 'SE Corridor', x: 720, y: 470 },
   ]
-
+  
   for (const c of corridorSeeds) {
     addNode({
       id: `${p}-cor-${c.key}`,

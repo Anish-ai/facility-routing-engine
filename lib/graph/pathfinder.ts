@@ -8,10 +8,12 @@ export function findPath(
   startNodeId: string,
   endNodeId: string,
   algorithm: 'dijkstra' | 'astar',
-  avoidDanger: boolean
+  avoidDanger: boolean,
+  avoidNodeIds: Set<string> = new Set(),
+  preferStairsOnFire: boolean = false
 ): PathResult | null {
   const t0 = performance.now()
-  const graph = buildUnifiedGraph(building, avoidDanger)
+  const graph = buildUnifiedGraph(building, avoidDanger, avoidNodeIds, preferStairsOnFire)
 
   if (!graph.has(startNodeId) || !graph.has(endNodeId)) return null
 

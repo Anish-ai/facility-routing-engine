@@ -12,7 +12,7 @@ export default function MapViewer() {
   const panRef = useRef({ ox: 60, oy: 60 })
 
   const { building } = useEditorStore()
-  const { path, activeViewFloor } = useNavigationStore()
+  const { path, activeViewFloor, emergencyByNodeId } = useNavigationStore()
 
   const activeFloor = building.floors.find(f => f.id === activeViewFloor)
 
@@ -76,18 +76,38 @@ export default function MapViewer() {
     for (const node of activeFloor.nodes) {
       const inPath = pathNodeSet.has(node.id)
       const pathIndex = inPath ? pathIds.indexOf(node.id) : null
+      const emergency = emergencyByNodeId[node.id]
+      const nodeForDraw = emergency ? { ...node, danger: true } : node
       if (hasPath && !inPath) {
         ctx.save()
         ctx.globalAlpha = 0.25
-        drawNode(ctx, node, false, false, false, null, 0, 0)
+        drawNode(ctx, nodeForDraw, false, false, false, null, 0, 0)
         ctx.restore()
       } else {
-        drawNode(ctx, node, false, false, inPath, pathIndex, 0, 0)
+        drawNode(ctx, nodeForDraw, false, false, inPath, pathIndex, 0, 0)
+      }
+
+      if (emergency) {
+        const marker = emergency === 'fire'
+          ? '🔥'
+          : emergency === 'medical'
+            ? '🚑'
+            : emergency === 'security'
+              ? '🛡️'
+              : emergency === 'smoke'
+                ? '💨'
+                : '☣️'
+        ctx.save()
+        ctx.font = '12px serif'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'bottom'
+        ctx.fillText(marker, node.x, node.y - NODE_RADIUS - 8)
+        ctx.restore()
       }
     }
 
     ctx.restore()
-  }, [activeFloor, path, pathEdgeSet, pathNodeSet])
+  }, [activeFloor, emergencyByNodeId, path, pathEdgeSet, pathNodeSet])
 
   useEffect(() => {
     const loop = () => {

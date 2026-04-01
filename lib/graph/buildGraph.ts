@@ -2,13 +2,17 @@ import { Building, GraphEntry, MapNode } from './types'
 
 export function buildUnifiedGraph(
   building: Building,
-  avoidDanger: boolean
+  avoidDanger: boolean,
+  avoidNodeIds: Set<string> = new Set(),
+  preferStairsOnFire: boolean = false
 ): Map<string, GraphEntry> {
   const graph = new Map<string, GraphEntry>()
+  const allNodes = getAllNodes(building)
 
   // Add all nodes from all floors
   for (const floor of building.floors) {
     for (const node of floor.nodes) {
+      if (avoidNodeIds.has(node.id)) continue
       if (node.blocked && avoidDanger) continue
       graph.set(node.id, { node, neighbors: [] })
     }
@@ -17,6 +21,7 @@ export function buildUnifiedGraph(
   // Add intra-floor edges
   for (const floor of building.floors) {
     for (const edge of floor.edges) {
+      if (avoidNodeIds.has(edge.from) || avoidNodeIds.has(edge.to)) continue
       if (edge.blocked && avoidDanger) continue
       const effectiveWeight = edge.weight + (edge.danger && avoidDanger ? (edge.penalty ?? 50) : 0)
 
@@ -33,8 +38,18 @@ export function buildUnifiedGraph(
 
   // Add cross-floor edges
   for (const edge of building.crossFloorEdges) {
+    if (avoidNodeIds.has(edge.from) || avoidNodeIds.has(edge.to)) continue
     if (edge.blocked && avoidDanger) continue
-    const effectiveWeight = edge.weight + (edge.danger && avoidDanger ? (edge.penalty ?? 50) : 0)
+    const fromNode = allNodes.get(edge.from)
+    const toNode = allNodes.get(edge.to)
+    const elevatorTransfer = fromNode?.type === 'elevator' || toNode?.type === 'elevator'
+
+    let effectiveWeight = edge.weight + (edge.danger && avoidDanger ? (edge.penalty ?? 50) : 0)
+
+    // During fire incidents we prefer stairs, but still allow lifts if no good alternative exists.
+    if (preferStairsOnFire && elevatorTransfer) {
+      effectiveWeight += 120
+    }
 
     const fromEntry = graph.get(edge.from)
     const toEntry = graph.get(edge.to)
